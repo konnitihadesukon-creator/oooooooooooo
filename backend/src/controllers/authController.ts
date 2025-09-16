@@ -53,7 +53,16 @@ export const authController = {
         { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
       )
 
-      // セッション保存
+      // セッション保存（アクセストークンとリフレッシュトークンの両方）
+      await prisma.session.create({
+        data: {
+          userId: user.id,
+          token: accessToken, // アクセストークンを保存
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24時間後
+        }
+      })
+      
+      // リフレッシュトークン用のセッション
       await prisma.session.create({
         data: {
           userId: user.id,
@@ -176,12 +185,21 @@ export const authController = {
         { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
       )
 
-      // セッション保存
+      // アクセストークンセッション保存
+      await prisma.session.create({
+        data: {
+          userId: user.id,
+          token: accessToken,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24時間
+        }
+      })
+      
+      // リフレッシュトークンセッション保存
       await prisma.session.create({
         data: {
           userId: user.id,
           token: refreshToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7日後
         }
       })
 
