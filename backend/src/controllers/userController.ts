@@ -44,6 +44,81 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 }
 
+// ユーザー作成（管理者専用）
+export const createUser = async (req: Request, res: Response) => {
+  try {
+    const { companyId, role: userRole } = req.user!
+    const { email, password, name, role, phone, avatar } = req.body
+
+    // 管理者チェック
+    if (userRole !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        error: '管理者権限が必要です'
+      })
+    }
+
+    // バリデーション
+    if (!email || !password || !name || !role) {
+      return res.status(400).json({
+        success: false,
+        error: 'メールアドレス、パスワード、名前、役割は必須です'
+      })
+    }
+
+    // メールアドレス重複チェック
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'このメールアドレスは既に使用されています'
+      })
+    }
+
+    // パスワードハッシュ化
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // ユーザー作成
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        role,
+        phone,
+        avatar,
+        companyId,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        avatar: true,
+        phone: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
+
+    res.status(201).json({
+      success: true,
+      data: { user },
+      message: 'ユーザーが正常に作成されました'
+    })
+  } catch (error) {
+    console.error('ユーザー作成エラー:', error)
+    res.status(500).json({
+      success: false,
+      error: 'サーバーエラーが発生しました'
+    })
+  }
+}
+
 // ユーザー詳細取得
 export const getUserById = async (req: Request, res: Response) => {
   try {
@@ -350,6 +425,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const userController = {
   getUsers,
+  createUser,
   getUserById,
   updateUser,
   deleteUser,

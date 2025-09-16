@@ -13,6 +13,9 @@ import {
   FormErrorMessage,
   Link,
   useToast,
+  Select,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -31,6 +34,10 @@ const registerSchema = z.object({
     ),
   confirmPassword: z.string(),
   name: z.string().min(1, '名前を入力してください'),
+  role: z.enum(['ADMIN', 'EMPLOYEE'], {
+    required_error: 'ロールを選択してください',
+    invalid_type_error: 'ロールを選択してください'
+  }),
   invitationCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'パスワードが一致しません',
@@ -47,9 +54,13 @@ const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      role: 'ADMIN'
+    }
   })
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -60,6 +71,7 @@ const RegisterPage: React.FC = () => {
         email: data.email,
         password: data.password,
         name: data.name,
+        role: data.role,
         invitationToken: data.invitationCode,
       }
       
@@ -129,6 +141,39 @@ const RegisterPage: React.FC = () => {
                   </FormErrorMessage>
                 </FormControl>
 
+                <FormControl isInvalid={!!errors.role}>
+                  <FormLabel>登録タイプ</FormLabel>
+                  <Select
+                    {...register('role')}
+                    size="lg"
+                    placeholder="登録タイプを選択してください"
+                  >
+                    <option value="ADMIN">管理者（新しい組織を作成）</option>
+                    <option value="EMPLOYEE">従業員（既存組織に参加）</option>
+                  </Select>
+                  <FormErrorMessage>
+                    {errors.role?.message}
+                  </FormErrorMessage>
+                </FormControl>
+
+                {watch('role') === 'ADMIN' && (
+                  <Alert status="info" borderRadius="md">
+                    <AlertIcon />
+                    <Text fontSize="sm">
+                      管理者として登録すると、新しい組織が作成され、あなたがその組織の管理者になります。
+                    </Text>
+                  </Alert>
+                )}
+
+                {watch('role') === 'EMPLOYEE' && (
+                  <Alert status="warning" borderRadius="md">
+                    <AlertIcon />
+                    <Text fontSize="sm">
+                      従業員として登録するには、既存の組織が必要です。管理者が作成した組織に参加することになります。
+                    </Text>
+                  </Alert>
+                )}
+
                 <FormControl isInvalid={!!errors.password}>
                   <FormLabel>パスワード</FormLabel>
                   <Input
@@ -155,17 +200,19 @@ const RegisterPage: React.FC = () => {
                   </FormErrorMessage>
                 </FormControl>
 
-                <FormControl isInvalid={!!errors.invitationCode}>
-                  <FormLabel>招待コード（任意）</FormLabel>
-                  <Input
-                    {...register('invitationCode')}
-                    placeholder="招待コードがある場合は入力"
-                    size="lg"
-                  />
-                  <FormErrorMessage>
-                    {errors.invitationCode?.message}
-                  </FormErrorMessage>
-                </FormControl>
+                {watch('role') === 'EMPLOYEE' && (
+                  <FormControl isInvalid={!!errors.invitationCode}>
+                    <FormLabel>招待コード（任意）</FormLabel>
+                    <Input
+                      {...register('invitationCode')}
+                      placeholder="招待コードがある場合は入力"
+                      size="lg"
+                    />
+                    <FormErrorMessage>
+                      {errors.invitationCode?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+                )}
 
                 <Button
                   type="submit"

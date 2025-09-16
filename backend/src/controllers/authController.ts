@@ -90,7 +90,7 @@ export const authController = {
   // 新規登録
   register: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password, name, invitationToken } = req.body
+      const { email, password, name, role, invitationToken } = req.body
 
       if (!email || !password || !name) {
         throw new BadRequestError('必要な情報が不足しています')
@@ -106,6 +106,7 @@ export const authController = {
       }
 
       let companyId: string
+      let userRole: 'ADMIN' | 'EMPLOYEE'
 
       // 招待トークンがある場合の処理
       if (invitationToken) {
@@ -128,6 +129,7 @@ export const authController = {
           throw new BadRequestError('会社が見つかりません')
         }
         companyId = company.id
+        userRole = 'EMPLOYEE' // 招待の場合は従業員固定
 
         // 招待トークンを使用済みにする
         await prisma.tempToken.update({
@@ -135,14 +137,32 @@ export const authController = {
           data: { used: true }
         })
       } else {
-        // 新規会社作成（管理者の場合）
-        const company = await prisma.company.create({
-          data: {
-            name: `${name}の会社`, // デフォルト名
-            adminId: 'temp' // 一時的なID
+        // ロールの検証（招待なしの場合）
+        if (!role || (role !== 'ADMIN' && role !== 'EMPLOYEE')) {
+          throw new BadRequestError('有効なロール（ADMIN または EMPLOYEE）を選択してください')
+        }
+
+        userRole = role
+
+        if (userRole === 'ADMIN') {
+          // 新規会社作成（管理者の場合）
+          const company = await prisma.company.create({
+            data: {
+              name: `${name}の会社`, // デフォルト名
+              adminId: 'temp' // 一時的なID
+            }
+          })
+          companyId = company.id
+        } else {
+          // 従業員の場合は既存の会社に所属させる
+          // 実際の実装では会社選択フィールドを追加するか、
+          // デフォルト会社への所属処理を行う
+          const company = await prisma.company.findFirst()
+          if (!company) {
+            throw new BadRequestError('会社が見つかりません。最初に管理者アカウントを作成してください')
           }
-        })
-        companyId = company.id
+          companyId = company.id
+        }
       }
 
       // パスワードハッシュ化
@@ -155,7 +175,7 @@ export const authController = {
           password: hashedPassword,
           name,
           companyId,
-          role: invitationToken ? 'EMPLOYEE' : 'ADMIN'
+          role: userRole
         },
         include: {
           company: {

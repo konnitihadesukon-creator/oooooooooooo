@@ -259,6 +259,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name: string;
+  role?: 'ADMIN' | 'EMPLOYEE'; // ユーザーが選択するロール
   companyId?: string; // 招待時に使用
   invitationToken?: string;
 }
