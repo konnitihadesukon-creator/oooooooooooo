@@ -18,9 +18,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { RegisterRequest } from '@shared/types'
+import { RegisterRequest, ROUTES } from '../../types'
 import { authService } from '../../services/authService'
-import { ROUTES } from '@shared/constants'
 
 const registerSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),

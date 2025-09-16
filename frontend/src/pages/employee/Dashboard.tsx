@@ -29,7 +29,7 @@ import {
 } from 'react-icons/fi'
 import { useAuthStore } from '../../store/authStore'
 import { useNavigate } from 'react-router-dom'
-import { ROUTES } from '@shared/constants'
+import { ROUTES } from '../../types'
 
 // ダミーデータ（実際の実装では API から取得）
 const dashboardData = {

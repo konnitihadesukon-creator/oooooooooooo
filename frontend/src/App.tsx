@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Box, Spinner, Center } from '@chakra-ui/react'
 import { useAuthStore } from './store/authStore'
-import { ROUTES } from '@shared/constants'
+import { ROUTES } from './types'
 
 // Page imports
 import LoginPage from './pages/auth/LoginPage'

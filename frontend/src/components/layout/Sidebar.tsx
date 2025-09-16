@@ -22,7 +22,7 @@ import {
 } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { ROUTES } from '@shared/constants'
+import { ROUTES } from '../../types'
 
 interface NavItem {
   label: string

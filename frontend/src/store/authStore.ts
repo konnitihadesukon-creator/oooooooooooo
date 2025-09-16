@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { User, LoginRequest, LoginResponse } from '@shared/types'
+import { User, LoginRequest, LoginResponse, STORAGE_KEYS } from '../types'
 import { authService } from '../services/authService'
 import { storage } from '../utils/storage'
-import { STORAGE_KEYS } from '@shared/constants'
 
 interface AuthState {
   user: User | null

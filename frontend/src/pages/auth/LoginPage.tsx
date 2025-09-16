@@ -26,9 +26,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
-import { LoginRequest } from '@shared/types'
+import { LoginRequest, ROUTES } from '../../types'
 import { useAuthStore } from '../../store/authStore'
-import { ROUTES } from '@shared/constants'
 
 // バリデーションスキーマ
 const loginSchema = z.object({
