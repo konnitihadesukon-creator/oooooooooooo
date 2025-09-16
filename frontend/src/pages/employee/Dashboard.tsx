@@ -123,9 +123,9 @@ const EmployeeDashboard: React.FC = () => {
         </Card>
       </VStack>
 
-      <Grid gap={6}>
+      <VStack spacing={{ base: 4, md: 6 }} align="stretch">
         {/* 統計カード - モバイル2列レイアウト */}
-        <SimpleGrid columns={{ base: 2, md: 2, lg: 4 }} spacing={{ base: 3, md: 6 }} mb={6}>
+        <SimpleGrid columns={{ base: 2, md: 2, lg: 4 }} spacing={{ base: 3, md: 6 }}>
           <Card>
             <CardBody p={{ base: 3, md: 6 }}>
               <Stat>
@@ -182,14 +182,14 @@ const EmployeeDashboard: React.FC = () => {
         </SimpleGrid>
 
         {/* メインコンテンツエリア */}
-        <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
+        <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={{ base: 4, md: 6 }}>
           {/* 左側：クイックアクション */}
-          <VStack spacing={6} align="stretch">
+          <VStack spacing={{ base: 4, md: 6 }} align="stretch">
             <Card>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Heading size="md">クイックアクション</Heading>
-                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              <CardBody p={{ base: 3, md: 6 }}>
+                <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                  <Heading size={{ base: 'sm', md: 'md' }}>クイックアクション</Heading>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 3, md: 4 }}>
                     {quickActions.map((action, index) => (
                       <Button
                         key={index}
@@ -230,9 +230,9 @@ const EmployeeDashboard: React.FC = () => {
 
             {/* 月間進捗 */}
             <Card>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Heading size="md">今月の進捗</Heading>
+              <CardBody p={{ base: 3, md: 6 }}>
+                <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                  <Heading size={{ base: 'sm', md: 'md' }}>今月の進捗</Heading>
                   <VStack spacing={3} align="stretch">
                     <Box>
                       <HStack justify="space-between" mb={2}>
@@ -265,28 +265,28 @@ const EmployeeDashboard: React.FC = () => {
           </VStack>
 
           {/* 右側：バッジ・お知らせ */}
-          <VStack spacing={6} align="stretch">
+          <VStack spacing={{ base: 4, md: 6 }} align="stretch">
             {/* 獲得バッジ */}
             <Card>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Heading size="md">獲得バッジ</Heading>
+              <CardBody p={{ base: 3, md: 6 }}>
+                <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                  <Heading size={{ base: 'sm', md: 'md' }}>獲得バッジ</Heading>
                   <VStack spacing={3}>
                     {dashboardData.badges.map((badge, index) => (
                       <HStack
                         key={index}
-                        p={3}
+                        p={{ base: 2, md: 3 }}
                         borderRadius="lg"
                         bg={badge.earned ? 'secondary.50' : 'gray.50'}
                         w="full"
                         opacity={badge.earned ? 1 : 0.5}
                       >
-                        <Text fontSize="2xl">{badge.icon}</Text>
+                        <Text fontSize={{ base: 'xl', md: '2xl' }}>{badge.icon}</Text>
                         <VStack align="start" spacing={0} flex={1}>
-                          <Text fontWeight="bold" fontSize="sm">
+                          <Text fontWeight="bold" fontSize={{ base: 'xs', md: 'sm' }}>
                             {badge.name}
                           </Text>
-                          <Text fontSize="xs" color="gray.600">
+                          <Text fontSize={{ base: '2xs', md: 'xs' }} color="gray.600">
                             {badge.earned ? '獲得済み' : '未獲得'}
                           </Text>
                         </VStack>
@@ -304,21 +304,21 @@ const EmployeeDashboard: React.FC = () => {
 
             {/* 最近の活動 */}
             <Card>
-              <CardBody>
-                <VStack spacing={4} align="stretch">
-                  <Heading size="md">最近の活動</Heading>
-                  <VStack spacing={3} align="stretch">
-                    <HStack>
-                      <Box w={2} h={2} borderRadius="full" bg="secondary.500" />
-                      <Text fontSize="sm">日報を提出しました</Text>
+              <CardBody p={{ base: 3, md: 6 }}>
+                <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                  <Heading size={{ base: 'sm', md: 'md' }}>最近の活動</Heading>
+                  <VStack spacing={{ base: 2, md: 3 }} align="stretch">
+                    <HStack spacing={{ base: 2, md: 3 }}>
+                      <Box w={2} h={2} borderRadius="full" bg="secondary.500" flexShrink={0} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>日報を提出しました</Text>
                     </HStack>
-                    <HStack>
-                      <Box w={2} h={2} borderRadius="full" bg="primary.500" />
-                      <Text fontSize="sm">シフト希望を提出しました</Text>
+                    <HStack spacing={{ base: 2, md: 3 }}>
+                      <Box w={2} h={2} borderRadius="full" bg="primary.500" flexShrink={0} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>シフト希望を提出しました</Text>
                     </HStack>
-                    <HStack>
-                      <Box w={2} h={2} borderRadius="full" bg="accent.500" />
-                      <Text fontSize="sm">勤怠を記録しました</Text>
+                    <HStack spacing={{ base: 2, md: 3 }}>
+                      <Box w={2} h={2} borderRadius="full" bg="accent.500" flexShrink={0} />
+                      <Text fontSize={{ base: 'xs', md: 'sm' }}>勤怠を記録しました</Text>
                     </HStack>
                   </VStack>
                 </VStack>
@@ -326,7 +326,7 @@ const EmployeeDashboard: React.FC = () => {
             </Card>
           </VStack>
         </Grid>
-      </Grid>
+      </VStack>
     </Box>
   )
 }

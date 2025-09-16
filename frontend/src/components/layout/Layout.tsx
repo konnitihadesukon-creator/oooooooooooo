@@ -14,8 +14,10 @@ const Layout: React.FC = () => {
   return (
     <>
       <Flex minH="100vh" bg="gray.50">
-        {/* デスクトップサイドバー */}
-        <Sidebar />
+        {/* デスクトップサイドバー - モバイルでは非表示 */}
+        <Box display={{ base: 'none', md: 'block' }}>
+          <Sidebar />
+        </Box>
         
         {/* メインコンテンツエリア */}
         <Box 
@@ -23,21 +25,32 @@ const Layout: React.FC = () => {
           display="flex" 
           flexDirection="column"
           ml={{ base: 0, md: '280px' }}
+          w={{ base: '100%', md: 'calc(100% - 280px)' }}
         >
-          {/* ヘッダー */}
+          {/* ヘッダー - モバイル最適化 */}
           <Header onSidebarToggle={onOpen} />
           
-          {/* ページコンテンツ */}
+          {/* ページコンテンツ - モバイルファースト */}
           <Box
             as="main"
             flex="1"
-            p={{ base: 4, md: 6 }}
-            pb={{ base: 20, md: 6 }} // モバイルでボトムナビゲーション分のスペースを確保
+            p={{ base: 3, sm: 4, md: 6 }}
+            pb={{ base: 24, md: 6 }} // モバイルでボトムナビゲーション分のスペースを確保
+            pt={{ base: 2, md: 4 }}
             bg="gray.50"
             overflowY="auto"
-            minH="calc(100vh - 80px)" // ヘッダー分を引いた高さ
+            minH={{ base: 'calc(100vh - 60px)', md: 'calc(100vh - 80px)' }}
+            maxW="100vw"
+            overflowX="hidden"
           >
-            <Outlet />
+            {/* モバイルコンテンツラッパー */}
+            <Box
+              maxW={{ base: '100%', md: 'none' }}
+              mx="auto"
+              w="full"
+            >
+              <Outlet />
+            </Box>
           </Box>
         </Box>
       </Flex>

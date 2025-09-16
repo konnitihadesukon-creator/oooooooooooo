@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { authController } from '../controllers/authController.js'
 import { authLimiter, passwordResetLimiter } from '../middleware/rateLimiter.js'
+import { authenticate, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -22,5 +23,13 @@ router.post('/password/reset', authController.resetPassword)
 // 生体認証
 router.post('/biometric/enable', authController.enableBiometricAuth)
 router.post('/biometric/login', authLimiter, authController.biometricLogin)
+
+// 招待コード管理（管理者用）
+router.post('/invite/generate', authenticate, requireAdmin, authController.generateInviteCode)
+router.get('/invite/codes', authenticate, requireAdmin, authController.getInviteCodes)
+router.delete('/invite/codes/:codeId', authenticate, requireAdmin, authController.revokeInviteCode)
+
+// パブリック招待コード取得（認証不要）
+router.get('/invite/public-codes', authController.getPublicInviteCodes)
 
 export default router
