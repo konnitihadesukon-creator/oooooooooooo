@@ -1,13 +1,57 @@
-import axios, { AxiosResponse } from 'axios'
-import { 
-  LoginRequest, 
-  LoginResponse, 
-  RegisterRequest, 
-  ApiResponse,
-  OtpRequest,
-  OtpVerifyRequest 
-} from '@shared/types'
-import { API_CONFIG } from '@shared/constants'
+import axios, { type AxiosResponse } from 'axios'
+
+// Temporary local types until shared module resolution is fixed
+interface LoginRequest {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+interface LoginResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    avatar?: string;
+    companyId: string;
+  };
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  companyName?: string;
+  role?: string;
+}
+
+interface OtpRequest {
+  email: string;
+  type: 'LOGIN' | 'REGISTER' | 'PASSWORD_RESET';
+}
+
+interface OtpVerifyRequest {
+  email: string;
+  otp: string;
+  type: 'LOGIN' | 'REGISTER' | 'PASSWORD_RESET';
+}
+
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  errors?: string[];
+}
+
+// API Configuration (temporary)
+const API_CONFIG = {
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
+  TIMEOUT: 30000
+}
 
 const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,

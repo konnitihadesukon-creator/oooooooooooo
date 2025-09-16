@@ -57,7 +57,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true,
+    host: '0.0.0.0',
+    allowedHosts: [
+      'localhost',
+      '3000-i2we0qeyckf0hril09soe-6532622b.e2b.dev',
+      '*.e2b.dev'
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -81,10 +86,5 @@ export default defineConfig({
         }
       }
     }
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts'
   }
 })
