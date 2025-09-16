@@ -371,4 +371,158 @@ export const authController = {
   biometricLogin: async (req: Request, res: Response, next: NextFunction) => {
     res.json({ success: false, message: '生体認証機能は開発中です' })
   },
+
+  // 招待コード生成（管理者用）
+  generateInviteCode: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      // 管理者権限チェック
+      if (!req.user || req.user.role !== 'ADMIN') {
+        throw new UnauthorizedError('管理者権限が必要です')
+      }
+
+      // 招待コード生成（8文字のランダム文字列）
+      const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase()
+      
+      // 有効期限を設定（7日後）
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+      // 招待トークンをデータベースに保存
+      const invitation = await prisma.tempToken.create({
+        data: {
+          token: inviteCode,
+          type: 'INVITATION',
+          expiresAt,
+          used: false,
+          metadata: JSON.stringify({
+            companyId: req.user.companyId,
+            createdBy: req.user.userId
+          })
+        }
+      })
+
+      res.json({
+        success: true,
+        data: {
+          inviteCode,
+          expiresAt,
+          id: invitation.id
+        }
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
+
+  // 招待コード一覧取得（管理者用）
+  getInviteCodes: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      // 管理者権限チェック
+      if (!req.user || req.user.role !== 'ADMIN') {
+        throw new UnauthorizedError('管理者権限が必要です')
+      }
+
+      // 現在有効な招待コードを取得
+      const inviteCodes = await prisma.tempToken.findMany({
+        where: {
+          type: 'INVITATION',
+          expiresAt: { gt: new Date() }
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          token: true,
+          expiresAt: true,
+          used: true,
+          createdAt: true,
+          metadata: true
+        }
+      })
+
+      // 使用済み招待コードの統計
+      const usedCount = await prisma.tempToken.count({
+        where: {
+          type: 'INVITATION',
+          used: true
+        }
+      })
+
+      res.json({
+        success: true,
+        data: {
+          inviteCodes,
+          statistics: {
+            total: inviteCodes.length,
+            used: usedCount,
+            active: inviteCodes.filter(code => !code.used).length
+          }
+        }
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
+
+  // 招待コード無効化（管理者用）
+  revokeInviteCode: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      // 管理者権限チェック
+      if (!req.user || req.user.role !== 'ADMIN') {
+        throw new UnauthorizedError('管理者権限が必要です')
+      }
+
+      const { codeId } = req.params
+
+      // 招待コードの存在確認
+      const invitation = await prisma.tempToken.findUnique({
+        where: { id: codeId }
+      })
+
+      if (!invitation || invitation.type !== 'INVITATION') {
+        throw new NotFoundError('招待コードが見つかりません')
+      }
+
+      // 招待コードを期限切れに設定（無効化）
+      await prisma.tempToken.update({
+        where: { id: codeId },
+        data: { expiresAt: new Date() }
+      })
+
+      res.json({
+        success: true,
+        message: '招待コードを無効化しました'
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
+
+  // パブリック招待コード一覧（認証不要）
+  getPublicInviteCodes: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // 現在有効な招待コードを取得（認証不要、公開API）
+      const inviteCodes = await prisma.tempToken.findMany({
+        where: {
+          type: 'INVITATION',
+          used: false,
+          expiresAt: { gt: new Date() }
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          token: true,
+          expiresAt: true,
+          createdAt: true
+        }
+      })
+
+      res.json({
+        success: true,
+        data: {
+          inviteCodes,
+          count: inviteCodes.length
+        }
+      })
+    } catch (error) {
+      next(error)
+    }
+  },
 }

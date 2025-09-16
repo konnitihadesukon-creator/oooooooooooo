@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Flex,
   VStack,
+  HStack,
   Text,
   Input,
   Button,
@@ -16,13 +17,22 @@ import {
   Select,
   Alert,
   AlertIcon,
+  Badge,
+  Code,
+  IconButton,
+  Tooltip,
+  Divider,
+  Collapse,
+  useDisclosure,
 } from '@chakra-ui/react'
+import { FiEye, FiEyeOff, FiCopy, FiRefreshCw } from 'react-icons/fi'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { RegisterRequest, ROUTES } from '../../types/index'
 import { authService } from '../../services/authService'
+import { inviteService } from '../../services/inviteService'
 
 const registerSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
@@ -48,13 +58,17 @@ type RegisterFormData = z.infer<typeof registerSchema>
 
 const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
+  const [availableInviteCodes, setAvailableInviteCodes] = useState<{ token: string; expiresAt: string; createdAt: string }[]>([])
+  const [isLoadingCodes, setIsLoadingCodes] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
+  const { isOpen: isCodesVisible, onToggle: toggleCodesVisible } = useDisclosure()
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -62,6 +76,51 @@ const RegisterPage: React.FC = () => {
       role: 'ADMIN'
     }
   })
+
+  // 利用可能な招待コードを取得
+  const fetchAvailableInviteCodes = async () => {
+    try {
+      setIsLoadingCodes(true)
+      const codes = await inviteService.getPublicInviteCodes()
+      setAvailableInviteCodes(codes)
+    } catch (error: any) {
+      console.error('招待コード取得エラー:', error)
+      // エラーがあっても登録画面の表示は続ける
+    } finally {
+      setIsLoadingCodes(false)
+    }
+  }
+
+  // 招待コードをクリップボードにコピー
+  const copyInviteCode = (token: string) => {
+    navigator.clipboard.writeText(token)
+    toast({
+      title: 'コピーしました',
+      description: `招待コード「${token}」をクリップボードにコピーしました`,
+      status: 'success',
+      duration: 2000,
+      isClosable: true
+    })
+  }
+
+  // 招待コードを入力フィールドにセット
+  const selectInviteCode = (token: string) => {
+    setValue('invitationCode', token)
+    toast({
+      title: '招待コードを選択',
+      description: `招待コード「${token}」を入力フィールドにセットしました`,
+      status: 'info',
+      duration: 2000,
+      isClosable: true
+    })
+  }
+
+  // 従業員ロールが選択された時に招待コードを取得
+  useEffect(() => {
+    if (watch('role') === 'EMPLOYEE') {
+      fetchAvailableInviteCodes()
+    }
+  }, [watch('role')])
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -201,17 +260,130 @@ const RegisterPage: React.FC = () => {
                 </FormControl>
 
                 {watch('role') === 'EMPLOYEE' && (
-                  <FormControl isInvalid={!!errors.invitationCode}>
-                    <FormLabel>招待コード（任意）</FormLabel>
-                    <Input
-                      {...register('invitationCode')}
-                      placeholder="招待コードがある場合は入力"
-                      size="lg"
-                    />
-                    <FormErrorMessage>
-                      {errors.invitationCode?.message}
-                    </FormErrorMessage>
-                  </FormControl>
+                  <VStack spacing={4} align="stretch">
+                    <FormControl isInvalid={!!errors.invitationCode}>
+                      <FormLabel>招待コード（任意）</FormLabel>
+                      <Input
+                        {...register('invitationCode')}
+                        placeholder="招待コードがある場合は入力"
+                        size="lg"
+                      />
+                      <FormErrorMessage>
+                        {errors.invitationCode?.message}
+                      </FormErrorMessage>
+                    </FormControl>
+
+                    {/* 利用可能な招待コード表示 */}
+                    <Box>
+                      <HStack justify="space-between" mb={2}>
+                        <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                          利用可能な招待コード
+                        </Text>
+                        <HStack>
+                          <Tooltip label="招待コード一覧を更新">
+                            <IconButton
+                              aria-label="更新"
+                              icon={<FiRefreshCw />}
+                              size="sm"
+                              variant="ghost"
+                              isLoading={isLoadingCodes}
+                              onClick={fetchAvailableInviteCodes}
+                            />
+                          </Tooltip>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            leftIcon={isCodesVisible ? <FiEyeOff /> : <FiEye />}
+                            onClick={toggleCodesVisible}
+                          >
+                            {isCodesVisible ? '非表示' : '表示'}
+                          </Button>
+                        </HStack>
+                      </HStack>
+
+                      <Collapse in={isCodesVisible} animateOpacity>
+                        {isLoadingCodes ? (
+                          <Alert status="info">
+                            <AlertIcon />
+                            招待コードを取得中...
+                          </Alert>
+                        ) : availableInviteCodes.length === 0 ? (
+                          <Alert status="warning">
+                            <AlertIcon />
+                            <VStack align="start" spacing={1}>
+                              <Text fontSize="sm" fontWeight="medium">利用可能な招待コードがありません</Text>
+                              <Text fontSize="xs">管理者に招待コードの発行を依頼してください。</Text>
+                            </VStack>
+                          </Alert>
+                        ) : (
+                          <Card bg="gray.50" borderWidth="1px">
+                            <CardBody p={4}>
+                              <VStack spacing={3} align="stretch">
+                                <Text fontSize="xs" color="gray.600">
+                                  以下の招待コードをクリックして入力フィールドにセットできます
+                                </Text>
+                                {availableInviteCodes.map((code, index) => (
+                                  <Box
+                                    key={index}
+                                    p={3}
+                                    bg="white"
+                                    borderRadius="md"
+                                    borderWidth="1px"
+                                    borderColor="gray.200"
+                                  >
+                                    <HStack justify="space-between" align="center">
+                                      <VStack align="start" spacing={1} flex={1}>
+                                        <HStack>
+                                          <Code
+                                            colorScheme="blue"
+                                            fontSize="lg"
+                                            fontWeight="bold"
+                                            cursor="pointer"
+                                            onClick={() => selectInviteCode(code.token)}
+                                            _hover={{ bg: 'blue.100' }}
+                                            p={2}
+                                          >
+                                            {code.token}
+                                          </Code>
+                                          <Badge colorScheme="green" variant="solid">
+                                            有効
+                                          </Badge>
+                                        </HStack>
+                                        <Text fontSize="xs" color="gray.500">
+                                          有効期限: {new Date(code.expiresAt).toLocaleString('ja-JP')}
+                                        </Text>
+                                      </VStack>
+                                      <VStack spacing={1}>
+                                        <Tooltip label="このコードを選択">
+                                          <Button
+                                            size="xs"
+                                            colorScheme="blue"
+                                            variant="outline"
+                                            onClick={() => selectInviteCode(code.token)}
+                                          >
+                                            選択
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip label="コピー">
+                                          <IconButton
+                                            aria-label="コピー"
+                                            icon={<FiCopy />}
+                                            size="xs"
+                                            variant="ghost"
+                                            onClick={() => copyInviteCode(code.token)}
+                                          />
+                                        </Tooltip>
+                                      </VStack>
+                                    </HStack>
+                                  </Box>
+                                ))}
+                              </VStack>
+                            </CardBody>
+                          </Card>
+                        )}
+                      </Collapse>
+                    </Box>
+                  </VStack>
                 )}
 
                 <Button
