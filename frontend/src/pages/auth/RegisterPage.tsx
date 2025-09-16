@@ -18,7 +18,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { RegisterRequest, ROUTES } from '../../types'
+import { RegisterRequest, ROUTES } from '../../types/index'
 import { authService } from '../../services/authService'
 
 const registerSchema = z.object({

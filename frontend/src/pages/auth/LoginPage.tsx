@@ -26,7 +26,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
-import { LoginRequest, ROUTES } from '../../types'
+import { LoginRequest, ROUTES } from '../../types/index'
 import { useAuthStore } from '../../store/authStore'
 
 // バリデーションスキーマ
@@ -312,6 +312,7 @@ const LoginPage: React.FC = () => {
             </VStack>
           </CardBody>
         </Card>
+        </Box>
       </Flex>
     </Flex>
   )

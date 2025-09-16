@@ -38,10 +38,29 @@ export const useAuthStore = create<AuthStore>()(
         try {
           set({ isLoading: true, error: null })
           
-          const response: LoginResponse = await authService.login(credentials)
+          const response = await authService.login(credentials)
+          
+          // Convert backend user to frontend User type
+          const user: User = {
+            id: response.user.id,
+            email: response.user.email,
+            name: response.user.name,
+            role: response.user.role as 'ADMIN' | 'EMPLOYEE',
+            avatar: response.user.avatar,
+            companyId: response.user.companyId,
+            isActive: true, // Default values for missing fields
+            biometricEnabled: false,
+            notificationSettings: {
+              email: true,
+              push: true,
+              sms: false,
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
           
           set({
-            user: response.user,
+            user,
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             isLoading: false,

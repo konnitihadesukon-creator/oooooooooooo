@@ -11,9 +11,11 @@ export interface User {
   companyId: string;
   biometricEnabled: boolean;
   biometricData?: string;
-  notificationEmail: boolean;
-  notificationPush: boolean;
-  notificationSms: boolean;
+  notificationSettings: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+  };
   createdAt: string;
   updatedAt: string;
   company?: {
@@ -40,6 +42,7 @@ export interface RegisterRequest {
   name: string;
   companyName?: string;
   role?: string;
+  invitationToken?: string;
 }
 
 // Constants

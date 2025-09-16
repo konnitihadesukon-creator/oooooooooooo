@@ -17,7 +17,7 @@ import {
 } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { ROUTES } from '../../types'
+import { ROUTES } from '../../types/index'
 
 interface NavItem {
   label: string
