@@ -17,7 +17,7 @@ import {
   FiMessageCircle,
   FiUsers,
   FiSettings,
-  FiBarChart3,
+  FiBarChart,
   FiMapPin,
 } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -103,7 +103,7 @@ const Sidebar: React.FC = () => {
     },
     {
       label: '分析・レポート',
-      icon: FiBarChart3,
+      icon: FiBarChart,
       path: ROUTES.ADMIN.ANALYTICS,
       role: 'ADMIN'
     },

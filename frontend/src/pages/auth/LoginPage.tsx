@@ -21,7 +21,7 @@ import {
   Image,
   Center,
 } from '@chakra-ui/react'
-import { FiEye, FiEyeOff, FiFingerprint, FiSmartphone } from 'react-icons/fi'
+import { FiEye, FiEyeOff, FiKey, FiSmartphone } from 'react-icons/fi'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -237,7 +237,7 @@ const LoginPage: React.FC = () => {
 
                 <HStack spacing={4} w="full">
                   <Button
-                    leftIcon={<FiFingerprint />}
+                    leftIcon={<FiKey />}
                     variant="outline"
                     size="lg"
                     flex={1}

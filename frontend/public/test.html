@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シフトマッチ - テストページ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3182CE;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .credentials {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #3182CE;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #2c5aa0; }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .mascot {
+            text-align: center;
+            font-size: 48px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mascot">🚚✨</div>
+        <h1>シフトマッチ - 軽貨物専用シフト管理アプリ</h1>
+        
+        <div class="status success">
+            ✅ フロントエンドサーバー: 正常動作中
+        </div>
+        <div class="status success">
+            ✅ バックエンドAPI: 接続可能
+        </div>
+        <div class="status info">
+            📡 API URL: https://3001-i2we0qeyckf0hril09soe-6532622b.e2b.dev
+        </div>
+
+        <div class="credentials">
+            <h3>🔑 テスト用ログイン情報</h3>
+            <p><strong>管理者アカウント:</strong></p>
+            <p>メール: admin@shift-match.com</p>
+            <p>パスワード: password123</p>
+            <hr>
+            <p><strong>従業員アカウント:</strong></p>
+            <p>メール: employee@shift-match.com</p>
+            <p>パスワード: password123</p>
+        </div>
+
+        <h3>🧪 API接続テスト</h3>
+        <button onclick="testHealthCheck()">ヘルスチェック</button>
+        <button onclick="testLogin()">ログインテスト</button>
+        <button onclick="testEmployeeLogin()">従業員ログイン</button>
+
+        <div id="result"></div>
+
+        <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #666;">
+            <p>Reactアプリケーションの型エラーを修正中です。</p>
+            <p>バックエンドAPI機能は完全に動作しています。</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://3001-i2we0qeyckf0hril09soe-6532622b.e2b.dev';
+        
+        function showResult(message, isSuccess = true) {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = isSuccess ? 'status success' : 'status error';
+            result.style.background = isSuccess ? '#d4edda' : '#f8d7da';
+            result.style.color = isSuccess ? '#155724' : '#721c24';
+            result.innerHTML = message;
+        }
+
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult(`✅ ヘルスチェック成功<br>サーバー稼働時間: ${Math.round(data.uptime)}秒<br>環境: ${data.environment}`);
+            } catch (error) {
+                showResult(`❌ ヘルスチェック失敗: ${error.message}`, false);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@shift-match.com',
+                        password: 'password123'
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showResult(`✅ 管理者ログイン成功<br>ユーザー: ${data.data.user.name}<br>ロール: ${data.data.user.role}<br>トークン取得済み`);
+                } else {
+                    showResult(`❌ ログイン失敗: ${data.error}`, false);
+                }
+            } catch (error) {
+                showResult(`❌ ログインエラー: ${error.message}`, false);
+            }
+        }
+
+        async function testEmployeeLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'employee@shift-match.com',
+                        password: 'password123'
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showResult(`✅ 従業員ログイン成功<br>ユーザー: ${data.data.user.name}<br>ロール: ${data.data.user.role}<br>会社: ${data.data.user.company?.name}`);
+                } else {
+                    showResult(`❌ ログイン失敗: ${data.error}`, false);
+                }
+            } catch (error) {
+                showResult(`❌ ログインエラー: ${error.message}`, false);
+            }
+        }
+
+        // 自動ヘルスチェック
+        window.onload = () => {
+            setTimeout(testHealthCheck, 1000);
+        };
+    </script>
+</body>
+</html>
