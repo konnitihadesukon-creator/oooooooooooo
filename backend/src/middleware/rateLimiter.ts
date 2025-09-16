@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit'
+import { rateLimit } from 'express-rate-limit'
 import { Request, Response } from 'express'
 
 // 基本的なレート制限
@@ -15,7 +15,6 @@ export const rateLimiter = rateLimit({
     res.status(429).json({
       success: false,
       error: 'リクエストが多すぎます。しばらく待ってから再試行してください。',
-      retryAfter: Math.round(req.rateLimit.resetTime / 1000),
     })
   },
 })
@@ -33,7 +32,6 @@ export const authLimiter = rateLimit({
     res.status(429).json({
       success: false,
       error: '認証の試行回数が制限を超えました。15分後に再試行してください。',
-      retryAfter: Math.round(req.rateLimit.resetTime / 1000),
     })
   },
 })

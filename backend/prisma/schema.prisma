@@ -1,0 +1,388 @@
+// Prisma schema for ShiftMatch - SQLite版（デモ用）
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザー（管理者・従業員）
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("EMPLOYEE") // ADMIN or EMPLOYEE
+  avatar    String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 会社関連
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // 生体認証設定
+  biometricEnabled Boolean @default(false)
+  biometricData    String? // 暗号化された生体認証データ
+
+  // 通知設定
+  notificationEmail Boolean @default(true)
+  notificationPush  Boolean @default(true)
+  notificationSms   Boolean @default(false)
+
+  // リレーション
+  shiftRequests    ShiftRequest[]
+  assignedShifts   ShiftAssignment[]
+  dailyReports     DailyReport[]
+  attendances      Attendance[]
+  sentMessages     Message[]
+  notifications    Notification[]
+  userBadges       UserBadge[]
+  chatParticipants ChatParticipant[]
+
+  @@map("users")
+}
+
+// 会社・グループ
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  adminId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 設定
+  shiftDeadlineDay  Int    @default(15) // 前月何日まで
+  workingHoursStart String @default("09:00")
+  workingHoursEnd   String @default("18:00")
+  overtimeRate      Float  @default(1.25)
+
+  // リレーション
+  users         User[]
+  locations     Location[]
+  shifts        Shift[]
+  shiftRequests ShiftRequest[]
+  dailyReports  DailyReport[]
+  attendances   Attendance[]
+  chats         Chat[]
+  notifications Notification[]
+
+  @@map("companies")
+}
+
+// 営業所・勤務地
+model Location {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  address   String
+  latitude  Float
+  longitude Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shiftSlots   ShiftSlot[]
+  dailyReports DailyReport[]
+  attendances  Attendance[]
+
+  @@map("locations")
+}
+
+// シフト（月単位）
+model Shift {
+  id          String   @id @default(cuid())
+  companyId   String
+  month       String   // YYYY-MM形式
+  status      String   @default("DRAFT") // DRAFT or PUBLISHED
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  company Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  slots   ShiftSlot[]
+
+  @@unique([companyId, month])
+  @@map("shifts")
+}
+
+// シフトスロット（日・営業所別）
+model ShiftSlot {
+  id            String   @id @default(cuid())
+  shiftId       String
+  locationId    String
+  date          DateTime // 日付
+  requiredCount Int      // 必要人数
+  isPublic      Boolean  @default(false) // 不足分公開フラグ
+  priority      String? // AIへの優先指示
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // リレーション
+  shift       Shift             @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  location    Location          @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  assignments ShiftAssignment[]
+
+  @@unique([shiftId, locationId, date])
+  @@map("shift_slots")
+}
+
+// シフト割り当て
+model ShiftAssignment {
+  id          String   @id @default(cuid())
+  slotId      String
+  userId      String
+  isConfirmed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  slot ShiftSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, userId])
+  @@map("shift_assignments")
+}
+
+// シフト希望提出
+model ShiftRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  companyId   String
+  month       String   // YYYY-MM形式
+  dates       String   // JSON文字列として保存
+  comment     String?
+  submittedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@map("shift_requests")
+}
+
+// 日報
+model DailyReport {
+  id          String   @id @default(cuid())
+  userId      String
+  companyId   String
+  locationId  String
+  date        DateTime // 作業日
+  paymentType String   // PIECE_RATE or DAILY_RATE
+
+  // 単価制データ
+  pieceRateItems String? // JSON文字列として保存
+  totalAmount    Int?    // 合計金額（円）
+
+  // 日当制データ
+  dailyAmount Int? // 日当金額（円）
+
+  // 共通フィールド
+  photos String @default("[]") // JSON配列として保存
+  notes  String?
+
+  // OCRデータ
+  ocrText       String?
+  ocrConfidence Float?
+  ocrProcessedAt DateTime?
+
+  // オフライン対応
+  isOfflineSubmitted Boolean  @default(false)
+  submittedAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // リレーション
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("daily_reports")
+}
+
+// 勤怠管理
+model Attendance {
+  id               String   @id @default(cuid())
+  userId           String
+  companyId        String
+  locationId       String?
+  date             DateTime // 勤務日
+
+  // 出勤
+  clockInTime      DateTime?
+  clockInLatitude  Float?
+  clockInLongitude Float?
+  clockInAddress   String?
+
+  // 退勤
+  clockOutTime      DateTime?
+  clockOutLatitude  Float?
+  clockOutLongitude Float?
+  clockOutAddress   String?
+
+  // 勤務時間
+  workingMinutes  Int? // 勤務時間（分）
+  overtimeMinutes Int? // 残業時間（分）
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date])
+  @@map("attendances")
+}
+
+// チャット
+model Chat {
+  id        String   @id @default(cuid())
+  companyId String
+  type      String   @default("GROUP") // GROUP or DIRECT
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  participants ChatParticipant[]
+  messages     Message[]
+
+  @@map("chats")
+}
+
+// チャット参加者
+model ChatParticipant {
+  id       String   @id @default(cuid())
+  chatId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  // リレーション
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@map("chat_participants")
+}
+
+// メッセージ
+model Message {
+  id          String   @id @default(cuid())
+  chatId      String
+  senderId    String
+  content     String
+  type        String   @default("TEXT") // TEXT, IMAGE, FILE, SYSTEM
+  attachments String   @default("[]") // JSON配列として保存
+  readBy      String   @default("[]") // JSON配列として保存
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+// 通知
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  type      String   // SHIFT_REMINDER, SHIFT_PUBLISHED, SHIFT_SHORTAGE, REPORT_REMINDER, CHAT_MESSAGE, SYSTEM
+  title     String
+  content   String
+  data      String?  @default("{}") // JSON文字列として保存
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// バッジ
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String
+  type        String   // ATTENDANCE_DAYS, SALES_AMOUNT, PERFECT_ATTENDANCE, TOP_PERFORMER
+  threshold   Int
+  period      String   // DAILY, WEEKLY, MONTHLY, YEARLY
+  createdAt   DateTime @default(now())
+
+  // リレーション
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+// ユーザーバッジ
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  // リレーション
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// セッション管理
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+// 一時的なトークン（パスワードリセット、招待など）
+model TempToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  type      String   // PASSWORD_RESET, EMAIL_VERIFICATION, INVITATION
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("temp_tokens")
+}
+
+// OTP（ワンタイムパスワード）
+model Otp {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("otps")
+}
