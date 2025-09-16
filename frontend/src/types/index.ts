@@ -43,6 +43,7 @@ export interface RegisterRequest {
   companyName?: string;
   role?: 'ADMIN' | 'EMPLOYEE';
   invitationToken?: string;
+  generateInviteCode?: boolean;
 }
 
 // Constants

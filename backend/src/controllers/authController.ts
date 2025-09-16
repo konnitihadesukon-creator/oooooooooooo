@@ -90,7 +90,7 @@ export const authController = {
   // 新規登録
   register: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password, name, role, invitationToken } = req.body
+      const { email, password, name, role, invitationToken, companyName, generateInviteCode } = req.body
 
       if (!email || !password || !name) {
         throw new BadRequestError('必要な情報が不足しています')
@@ -116,6 +116,9 @@ export const authController = {
             type: 'INVITATION',
             used: false,
             expiresAt: { gt: new Date() }
+          },
+          include: {
+            // metadataから会社情報を取得するための処理
           }
         })
 
@@ -123,11 +126,29 @@ export const authController = {
           throw new BadRequestError('無効または期限切れの招待コードです')
         }
 
-        // 招待に指定された会社IDを取得（実際の実装では招待データに含める）
-        const company = await prisma.company.findFirst()
-        if (!company) {
-          throw new BadRequestError('会社が見つかりません')
+        // 招待に指定された会社IDを取得
+        let targetCompanyId: string
+        try {
+          const metadata = JSON.parse(invitation.metadata || '{}')
+          targetCompanyId = metadata.companyId
+        } catch {
+          // メタデータが解析できない場合は最初の会社を使用
+          const company = await prisma.company.findFirst()
+          if (!company) {
+            throw new BadRequestError('会社が見つかりません')
+          }
+          targetCompanyId = company.id
         }
+
+        // 会社の存在確認
+        const company = await prisma.company.findUnique({
+          where: { id: targetCompanyId }
+        })
+
+        if (!company) {
+          throw new BadRequestError('招待された会社が見つかりません')
+        }
+
         companyId = company.id
         userRole = 'EMPLOYEE' // 招待の場合は従業員固定
 
@@ -145,19 +166,24 @@ export const authController = {
         userRole = role
 
         if (userRole === 'ADMIN') {
+          // 管理者の場合は企業名が必須
+          if (!companyName || companyName.trim() === '') {
+            throw new BadRequestError('管理者登録には企業名が必要です')
+          }
+
           // 新規会社作成（管理者の場合）
           const company = await prisma.company.create({
             data: {
-              name: `${name}の会社`, // デフォルト名
+              name: companyName.trim(),
               adminId: 'temp' // 一時的なID
             }
           })
           companyId = company.id
         } else {
           // 従業員の場合は既存の会社に所属させる
-          // 実際の実装では会社選択フィールドを追加するか、
-          // デフォルト会社への所属処理を行う
-          const company = await prisma.company.findFirst()
+          const company = await prisma.company.findFirst({
+            orderBy: { createdAt: 'desc' } // 最新の会社を取得
+          })
           if (!company) {
             throw new BadRequestError('会社が見つかりません。最初に管理者アカウントを作成してください')
           }
@@ -190,6 +216,25 @@ export const authController = {
           where: { id: companyId },
           data: { adminId: user.id }
         })
+
+        // 初期招待コード生成（オプション）
+        if (generateInviteCode) {
+          const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase()
+          const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7日後
+
+          await prisma.tempToken.create({
+            data: {
+              token: inviteCode,
+              type: 'INVITATION',
+              expiresAt,
+              used: false,
+              metadata: JSON.stringify({
+                companyId: companyId,
+                createdBy: user.id
+              })
+            }
+          })
+        }
       }
 
       // トークン生成

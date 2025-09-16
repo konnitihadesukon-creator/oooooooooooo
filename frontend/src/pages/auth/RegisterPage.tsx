@@ -48,10 +48,21 @@ const registerSchema = z.object({
     required_error: 'ロールを選択してください',
     invalid_type_error: 'ロールを選択してください'
   }),
+  companyName: z.string().optional(),
   invitationCode: z.string().optional(),
+  generateInviteCode: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'パスワードが一致しません',
   path: ['confirmPassword'],
+}).refine((data) => {
+  // 管理者の場合は企業名が必須
+  if (data.role === 'ADMIN' && !data.companyName) {
+    return false
+  }
+  return true
+}, {
+  message: '管理者の場合は企業名を入力してください',
+  path: ['companyName'],
 })
 
 type RegisterFormData = z.infer<typeof registerSchema>
@@ -132,6 +143,8 @@ const RegisterPage: React.FC = () => {
         name: data.name,
         role: data.role,
         invitationToken: data.invitationCode,
+        companyName: data.companyName,
+        generateInviteCode: data.generateInviteCode,
       }
       
       await authService.register(registerData)
@@ -216,20 +229,66 @@ const RegisterPage: React.FC = () => {
                 </FormControl>
 
                 {watch('role') === 'ADMIN' && (
-                  <Alert status="info" borderRadius="md">
-                    <AlertIcon />
-                    <Text fontSize="sm">
-                      管理者として登録すると、新しい組織が作成され、あなたがその組織の管理者になります。
-                    </Text>
-                  </Alert>
+                  <VStack spacing={4} align="stretch">
+                    <Alert status="info" borderRadius="md">
+                      <AlertIcon />
+                      <Text fontSize="sm">
+                        管理者として登録すると、新しい組織が作成され、あなたがその組織の管理者になります。
+                      </Text>
+                    </Alert>
+
+                    <FormControl isInvalid={!!errors.companyName} isRequired>
+                      <FormLabel>企業名</FormLabel>
+                      <Input
+                        {...register('companyName')}
+                        placeholder="株式会社◯◯、◯◯運送など"
+                        size="lg"
+                      />
+                      <FormErrorMessage>
+                        {errors.companyName?.message}
+                      </FormErrorMessage>
+                    </FormControl>
+
+                    <Card bg="blue.50" borderColor="blue.200" borderWidth="1px">
+                      <CardBody p={4}>
+                        <VStack spacing={3} align="stretch">
+                          <Text fontSize="sm" fontWeight="medium" color="blue.700">
+                            🎫 招待コードの初期設定
+                          </Text>
+                          <FormControl>
+                            <HStack spacing={3}>
+                              <input
+                                type="checkbox"
+                                {...register('generateInviteCode')}
+                                style={{ width: '18px', height: '18px' }}
+                              />
+                              <VStack align="start" spacing={0} flex={1}>
+                                <Text fontSize="sm" fontWeight="medium">
+                                  最初の招待コードを自動生成する
+                                </Text>
+                                <Text fontSize="xs" color="gray.600">
+                                  登録完了後、従業員招待用のコードが1つ生成されます
+                                </Text>
+                              </VStack>
+                            </HStack>
+                          </FormControl>
+                        </VStack>
+                      </CardBody>
+                    </Card>
+                  </VStack>
                 )}
 
                 {watch('role') === 'EMPLOYEE' && (
-                  <Alert status="warning" borderRadius="md">
+                  <Alert status="info" borderRadius="md">
                     <AlertIcon />
-                    <Text fontSize="sm">
-                      従業員として登録するには、既存の組織が必要です。管理者が作成した組織に参加することになります。
-                    </Text>
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="sm" fontWeight="medium">
+                        従業員として登録
+                      </Text>
+                      <Text fontSize="sm">
+                        招待コードがある場合は指定の組織に参加、ない場合は既存の組織に参加します。
+                      </Text>
+                    </VStack>
                   </Alert>
                 )}
 
