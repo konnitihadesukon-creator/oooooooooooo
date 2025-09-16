@@ -156,25 +156,24 @@ export const getChatMessages = async (req: Request, res: Response) => {
       take: Number(limit)
     })
 
-    // メッセージを既読にする
-    await prisma.message.updateMany({
+    // メッセージを既読にする（JSON形式で更新）
+    const unreadMessages = await prisma.message.findMany({
       where: {
         chatId,
-        senderId: { not: userId },
-        readBy: {
-          none: {
-            userId: userId
-          }
-        }
-      },
-      data: {
-        readBy: {
-          create: {
-            userId: userId
-          }
-        }
+        senderId: { not: userId }
       }
     })
+
+    for (const message of unreadMessages) {
+      const readByList = JSON.parse(message.readBy || '[]')
+      if (!readByList.includes(userId)) {
+        readByList.push(userId)
+        await prisma.message.update({
+          where: { id: message.id },
+          data: { readBy: JSON.stringify(readByList) }
+        })
+      }
+    }
 
     res.json({
       success: true,
@@ -241,11 +240,7 @@ export const sendMessage = async (req: Request, res: Response) => {
         content: content || '',
         type,
         attachments: JSON.stringify(attachments),
-        readBy: {
-          create: {
-            userId: userId // 送信者は自動的に既読
-          }
-        }
+        readBy: JSON.stringify([userId]) // 送信者は自動的に既読
       },
       include: {
         sender: {
@@ -464,20 +459,13 @@ export const markAsRead = async (req: Request, res: Response) => {
       })
     }
 
-    // 既読記録がない場合のみ追加
-    const existingRead = await prisma.messageRead.findFirst({
-      where: {
-        messageId,
-        userId
-      }
-    })
-
-    if (!existingRead) {
-      await prisma.messageRead.create({
-        data: {
-          messageId,
-          userId
-        }
+    // 既読記録がない場合のみ追加（JSON形式）
+    const readByList = JSON.parse(message.readBy || '[]')
+    if (!readByList.includes(userId)) {
+      readByList.push(userId)
+      await prisma.message.update({
+        where: { id: messageId },
+        data: { readBy: JSON.stringify(readByList) }
       })
     }
 

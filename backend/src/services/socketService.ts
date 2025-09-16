@@ -41,10 +41,11 @@ export function initializeSocket(io: Server) {
 
   io.on('connection', (socket) => {
     const user = socket.data.user as SocketUser
-    console.log(`User ${user.name} connected`)
+    console.log(`✅ User ${user.name} (${user.id}) connected`)
 
-    // ユーザーを会社のルームに参加
+    // ユーザーを会社のルームとユーザー固有のルームに参加
     socket.join(`company:${user.companyId}`)
+    socket.join(`user:${user.id}`)
     
     // 接続ユーザーを記録
     connectedUsers.set(socket.id, user)
@@ -55,13 +56,17 @@ export function initializeSocket(io: Server) {
       name: user.name
     })
 
+    console.log(`📊 Current online users: ${connectedUsers.size}`)
+
     // チャット関連のイベント
-    socket.on('join-chat', (data: { chatId: string }) => {
-      socket.join(`chat:${data.chatId}`)
+    socket.on('join-chat', (chatId: string) => {
+      socket.join(`chat:${chatId}`)
+      console.log(`🏠 User ${user.name} joined chat: ${chatId}`)
     })
 
-    socket.on('leave-chat', (data: { chatId: string }) => {
-      socket.leave(`chat:${data.chatId}`)
+    socket.on('leave-chat', (chatId: string) => {
+      socket.leave(`chat:${chatId}`)
+      console.log(`🚪 User ${user.name} left chat: ${chatId}`)
     })
 
     socket.on('send-message', async (data: { chatId: string; content: string; type: string }) => {

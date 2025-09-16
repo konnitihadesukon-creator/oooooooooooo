@@ -370,6 +370,7 @@ model TempToken {
   type      String   // PASSWORD_RESET, EMAIL_VERIFICATION, INVITATION
   expiresAt DateTime
   used      Boolean  @default(false)
+  metadata  String?  // JSON形式でメタデータを保存
   createdAt DateTime @default(now())
 
   @@map("temp_tokens")

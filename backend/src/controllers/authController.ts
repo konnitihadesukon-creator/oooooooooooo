@@ -224,6 +224,7 @@ export const authController = {
 
           await prisma.tempToken.create({
             data: {
+              email: user.email,
               token: inviteCode,
               type: 'INVITATION',
               expiresAt,
@@ -434,6 +435,7 @@ export const authController = {
       // 招待トークンをデータベースに保存
       const invitation = await prisma.tempToken.create({
         data: {
+          email: req.user.email || '', // 作成者のメール（不明な場合は空文字）
           token: inviteCode,
           type: 'INVITATION',
           expiresAt,

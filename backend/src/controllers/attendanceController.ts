@@ -69,10 +69,38 @@ export const clockIn = async (req: Request, res: Response) => {
     const { companyId, userId } = req.user!
     const { locationId, latitude, longitude, address } = req.body
 
+    // リクエストデータのログ出力（デバッグ用）
+    console.log('Clock-in request data:', {
+      userId,
+      companyId,
+      locationId,
+      latitude,
+      longitude,
+      address
+    })
+
     if (!locationId) {
+      console.log('Error: locationId is missing')
       return res.status(400).json({
         success: false,
-        error: '勤務地の選択が必要です'
+        error: '勤務地の選択が必要です。勤務地を選択してから出勤してください。'
+      })
+    }
+
+    // 選択された勤務地が存在し、かつ同じ企業に属するかチェック
+    const location = await prisma.location.findFirst({
+      where: {
+        id: locationId,
+        companyId,
+        isActive: true
+      }
+    })
+
+    if (!location) {
+      console.log('Error: Invalid location or location not found:', locationId)
+      return res.status(400).json({
+        success: false,
+        error: '選択された勤務地が見つかりません。有効な勤務地を選択してください。'
       })
     }
 
@@ -81,7 +109,7 @@ export const clockIn = async (req: Request, res: Response) => {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // 既存の出勤記録チェック
+    // 既存の出勤記録チェック（既に出勤済みの場合のみエラー）
     const existingRecord = await prisma.attendance.findFirst({
       where: {
         userId,
@@ -92,34 +120,55 @@ export const clockIn = async (req: Request, res: Response) => {
       }
     })
 
-    if (existingRecord) {
+    if (existingRecord && existingRecord.clockInTime) {
       return res.status(400).json({
         success: false,
         error: '本日の出勤記録は既に存在します'
       })
     }
 
-    const record = await prisma.attendance.create({
-      data: {
-        userId,
-        companyId,
-        locationId,
-        date: new Date(),
-        clockInTime: new Date(),
-        clockInLatitude: latitude || null,
-        clockInLongitude: longitude || null,
-        clockInAddress: address || null
-      },
-      include: {
-        location: {
-          select: {
-            id: true,
-            name: true,
-            address: true
+    // 既存レコードがある場合は更新、ない場合は作成
+    const record = existingRecord
+      ? await prisma.attendance.update({
+          where: { id: existingRecord.id },
+          data: {
+            clockInTime: new Date(),
+            clockInLatitude: latitude || null,
+            clockInLongitude: longitude || null,
+            clockInAddress: address || null,
+            locationId
+          },
+          include: {
+            location: {
+              select: {
+                id: true,
+                name: true,
+                address: true
+              }
+            }
           }
-        }
-      }
-    })
+        })
+      : await prisma.attendance.create({
+          data: {
+            userId,
+            companyId,
+            locationId,
+            date: new Date(),
+            clockInTime: new Date(),
+            clockInLatitude: latitude || null,
+            clockInLongitude: longitude || null,
+            clockInAddress: address || null
+          },
+          include: {
+            location: {
+              select: {
+                id: true,
+                name: true,
+                address: true
+              }
+            }
+          }
+        })
 
     res.status(201).json({
       success: true,
