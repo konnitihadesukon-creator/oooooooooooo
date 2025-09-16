@@ -1,0 +1,54 @@
+{
+  "name": "shift-match",
+  "version": "1.0.0",
+  "description": "軽貨物専用シフト管理アプリ",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm frontend:dev\" \"pnpm backend:dev\"",
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && npm run dev",
+    "build": "concurrently \"pnpm frontend:build\" \"pnpm backend:build\"",
+    "frontend:build": "cd frontend && npm run build",
+    "backend:build": "cd backend && npm run build",
+    "test": "concurrently \"pnpm frontend:test\" \"pnpm backend:test\"",
+    "frontend:test": "cd frontend && npm run test",
+    "backend:test": "cd backend && npm run test",
+    "db:setup": "cd backend && npm run db:setup",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "deploy": "npm run build && npm run deploy:frontend && npm run deploy:backend",
+    "deploy:frontend": "cd frontend && npm run deploy",
+    "deploy:backend": "cd backend && npm run deploy",
+    "lint": "concurrently \"pnpm frontend:lint\" \"pnpm backend:lint\"",
+    "frontend:lint": "cd frontend && npm run lint",
+    "backend:lint": "cd backend && npm run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "concurrently": "^8.2.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "シフト管理",
+    "軽貨物",
+    "物流",
+    "勤怠管理",
+    "AI",
+    "React",
+    "Node.js",
+    "TypeScript"
+  ],
+  "author": "Claude AI Assistant",
+  "license": "MIT"
+}

@@ -1,0 +1,100 @@
+# 依存関係
+node_modules/
+*/node_modules/
+.pnpm-store/
+
+# ログ
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ビルドファイル
+dist/
+build/
+*/dist/
+*/build/
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# エディター・IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ランタイムデータ
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# テスト・カバレッジ
+coverage/
+.nyc_output
+*.lcov
+.coverage/
+
+# データベース
+*.sqlite
+*.sqlite3
+*.db
+prisma/migrations/
+
+# 一時ファイル
+tmp/
+temp/
+.tmp/
+
+# アップロードファイル
+uploads/
+public/uploads/
+
+# キャッシュ
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vite-cache/
+
+# Vercel
+.vercel
+
+# Railway
+railway.json
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# ログファイル
+logs/
+*.log
+
+# セキュリティ
+.cert/
+.key/
+*.pem
+
+# その他
+.eslintcache
+.stylelintcache
+*lock.json
+yarn.lock
