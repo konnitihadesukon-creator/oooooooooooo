@@ -85,32 +85,36 @@ const EmployeeDashboard: React.FC = () => {
   ]
 
   return (
-    <Box>
+    <Box pb={{ base: 4, md: 0 }}>
       {/* ヘッダー */}
-      <VStack align="start" spacing={4} mb={8}>
-        <HStack spacing={4}>
+      <VStack align="start" spacing={4} mb={{ base: 6, md: 8 }}>
+        <HStack spacing={4} w="full">
           <Avatar
-            size="lg"
+            size={{ base: "md", md: "lg" }}
             name={user?.name}
             src={user?.avatar}
             bg="primary.500"
           />
-          <VStack align="start" spacing={1}>
-            <Heading size="lg">おかえりなさい、{user?.name}さん</Heading>
-            <Text color="gray.600">今日も一日お疲れ様です</Text>
+          <VStack align="start" spacing={1} flex={1}>
+            <Heading size={{ base: "md", md: "lg" }}>
+              おかえりなさい、{user?.name?.split('（')[0] || user?.name}さん
+            </Heading>
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }}>
+              今日も一日お疲れ様です
+            </Text>
           </VStack>
         </HStack>
 
-        {/* シフトくんキャラクター */}
+        {/* シフトくんキャラクター - モバイル対応 */}
         <Card bg="primary.50" borderColor="primary.200" borderWidth="2px">
-          <CardBody>
-            <HStack spacing={4}>
-              <Box fontSize="4xl">🚚</Box>
-              <VStack align="start" spacing={1}>
-                <Text fontWeight="bold" color="primary.700">
+          <CardBody p={{ base: 4, md: 6 }}>
+            <HStack spacing={{ base: 3, md: 4 }}>
+              <Box fontSize={{ base: "3xl", md: "4xl" }}>🚚</Box>
+              <VStack align="start" spacing={1} flex={1}>
+                <Text fontWeight="bold" color="primary.700" fontSize={{ base: "sm", md: "md" }}>
                   シフトくんより
                 </Text>
-                <Text fontSize="sm" color="primary.600">
+                <Text fontSize={{ base: "xs", md: "sm" }} color="primary.600">
                   今月の売上目標まであと¥{(150000 - dashboardData.totalSales).toLocaleString()}です！頑張りましょう！
                 </Text>
               </VStack>
@@ -120,14 +124,14 @@ const EmployeeDashboard: React.FC = () => {
       </VStack>
 
       <Grid gap={6}>
-        {/* 統計カード */}
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={6}>
+        {/* 統計カード - モバイル2列レイアウト */}
+        <SimpleGrid columns={{ base: 2, md: 2, lg: 4 }} spacing={{ base: 3, md: 6 }} mb={6}>
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 3, md: 6 }}>
               <Stat>
-                <StatLabel>今月の稼働日数</StatLabel>
-                <StatNumber>{dashboardData.workingDays}日</StatNumber>
-                <StatHelpText>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>今月の稼働日数</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "2xl" }}>{dashboardData.workingDays}日</StatNumber>
+                <StatHelpText fontSize={{ base: "2xs", md: "xs" }}>
                   <StatArrow type="increase" />
                   先月より 2日増
                 </StatHelpText>
@@ -136,11 +140,11 @@ const EmployeeDashboard: React.FC = () => {
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 3, md: 6 }}>
               <Stat>
-                <StatLabel>今月の売上</StatLabel>
-                <StatNumber>¥{dashboardData.totalSales.toLocaleString()}</StatNumber>
-                <StatHelpText>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>今月の売上</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "2xl" }}>¥{dashboardData.totalSales.toLocaleString()}</StatNumber>
+                <StatHelpText fontSize={{ base: "2xs", md: "xs" }}>
                   <StatArrow type="increase" />
                   先月より 7.4%増
                 </StatHelpText>
@@ -149,26 +153,26 @@ const EmployeeDashboard: React.FC = () => {
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 3, md: 6 }}>
               <Stat>
-                <StatLabel>日平均売上</StatLabel>
-                <StatNumber>¥{dashboardData.averageDaily.toLocaleString()}</StatNumber>
-                <StatHelpText>今月実績</StatHelpText>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>日平均売上</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "2xl" }}>¥{dashboardData.averageDaily.toLocaleString()}</StatNumber>
+                <StatHelpText fontSize={{ base: "2xs", md: "xs" }}>今月実績</StatHelpText>
               </Stat>
             </CardBody>
           </Card>
 
           <Card>
-            <CardBody>
+            <CardBody p={{ base: 3, md: 6 }}>
               <Stat>
-                <StatLabel>チーム内順位</StatLabel>
-                <StatNumber>
+                <StatLabel fontSize={{ base: "xs", md: "sm" }}>チーム内順位</StatLabel>
+                <StatNumber fontSize={{ base: "lg", md: "2xl" }}>
                   {dashboardData.ranking.position}位
-                  <Text as="span" fontSize="md" color="gray.500">
+                  <Text as="span" fontSize={{ base: "xs", md: "md" }} color="gray.500">
                     /{dashboardData.ranking.total}人中
                   </Text>
                 </StatNumber>
-                <StatHelpText>
+                <StatHelpText fontSize={{ base: "2xs", md: "xs" }}>
                   <StatArrow type="increase" />
                   前月より 2位上昇
                 </StatHelpText>
@@ -189,18 +193,20 @@ const EmployeeDashboard: React.FC = () => {
                     {quickActions.map((action, index) => (
                       <Button
                         key={index}
-                        size="lg"
+                        size={{ base: "md", md: "lg" }}
                         height="auto"
-                        p={6}
+                        p={{ base: 4, md: 6 }}
                         leftIcon={<action.icon />}
                         variant="outline"
                         colorScheme={action.color}
                         onClick={() => navigate(action.path)}
                         position="relative"
                       >
-                        <VStack spacing={2}>
-                          <Text fontWeight="bold">{action.title}</Text>
-                          <Text fontSize="sm" opacity={0.8}>
+                        <VStack spacing={{ base: 1, md: 2 }}>
+                          <Text fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>
+                            {action.title}
+                          </Text>
+                          <Text fontSize={{ base: "xs", md: "sm" }} opacity={0.8}>
                             {action.description}
                           </Text>
                         </VStack>

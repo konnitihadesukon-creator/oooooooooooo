@@ -106,13 +106,17 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <Flex minH="100vh" bg="gray.50">
-      {/* 左側：ブランディングエリア */}
+    <Flex 
+      minH="100vh" 
+      bg={{ base: "primary.500", lg: "gray.50" }}
+      direction={{ base: "column", lg: "row" }}
+    >
+      {/* 左側：ブランディングエリア - デスクトップ表示 */}
       <Flex
         flex={1}
         bg="primary.500"
         color="white"
-        p={12}
+        p={{ base: 8, lg: 12 }}
         direction="column"
         justify="center"
         display={{ base: 'none', lg: 'flex' }}
@@ -159,10 +163,39 @@ const LoginPage: React.FC = () => {
         </VStack>
       </Flex>
 
-      {/* 右側：ログインフォーム */}
-      <Flex flex={1} justify="center" align="center" p={8}>
-        <Card w="full" maxW="md" boxShadow="xl">
-          <CardBody p={8}>
+      {/* モバイル用ヘッダー */}
+      <Box 
+        display={{ base: 'block', lg: 'none' }}
+        color="white"
+        p={6}
+        textAlign="center"
+      >
+        <Text fontSize="6xl" mb={2}>🚚</Text>
+        <Text fontSize="2xl" fontWeight="bold" mb={1}>
+          シフトマッチ
+        </Text>
+        <Text fontSize="sm" opacity={0.9}>
+          軽貨物専用シフト管理アプリ
+        </Text>
+      </Box>
+
+      {/* ログインフォーム */}
+      <Flex 
+        flex={1} 
+        justify="center" 
+        align={{ base: "flex-start", lg: "center" }}
+        p={{ base: 6, lg: 8 }}
+        bg={{ base: "white", lg: "transparent" }}
+        borderTopRadius={{ base: "2xl", lg: "none" }}
+        mt={{ base: "auto", lg: 0 }}
+      >
+        <Box w="full" maxW="md">
+          <Card 
+            w="full" 
+            boxShadow={{ base: "none", lg: "xl" }}
+            bg={{ base: "transparent", lg: "white" }}
+          >
+            <CardBody p={{ base: 0, lg: 8 }}>
             <VStack spacing={6} align="stretch">
               {/* タイトル */}
               <VStack spacing={2}>
