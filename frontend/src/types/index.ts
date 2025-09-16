@@ -41,7 +41,7 @@ export interface RegisterRequest {
   password: string;
   name: string;
   companyName?: string;
-  role?: string;
+  role?: 'ADMIN' | 'EMPLOYEE';
   invitationToken?: string;
 }
 

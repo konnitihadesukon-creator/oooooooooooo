@@ -25,7 +25,8 @@ interface RegisterRequest {
   password: string;
   name: string;
   companyName?: string;
-  role?: string;
+  role?: 'ADMIN' | 'EMPLOYEE';
+  invitationToken?: string;
 }
 
 interface OtpRequest {
@@ -53,6 +54,9 @@ const API_CONFIG = {
   TIMEOUT: 30000
 }
 
+// Debug logging
+console.log('🔧 API Base URL:', API_CONFIG.BASE_URL)
+
 const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
@@ -76,10 +80,12 @@ export const authService = {
 
   // 新規登録
   register: async (userData: RegisterRequest): Promise<LoginResponse> => {
+    console.log('📝 Register request:', userData)
     const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
       '/auth/register', 
       userData
     )
+    console.log('✅ Register response:', response.data)
     return response.data.data!
   },
 
@@ -148,17 +154,37 @@ export const authService = {
   },
 }
 
-// レスポンスインターセプター（トークンリフレッシュ用）
+// エラーメッセージマッピング
+const errorMessages: Record<number, string> = {
+  400: 'リクエストが無効です。入力内容を確認してください。',
+  401: 'ログインが必要です。再度ログインしてください。',
+  403: 'この操作を実行する権限がありません。',
+  404: 'リクエストされたリソースが見つかりません。',
+  409: '既に存在するデータです。',
+  422: '入力データに不備があります。',
+  429: 'リクエストが多すぎます。しばらく待ってから再試行してください。',
+  500: 'サーバーでエラーが発生しました。時間を置いて再試行してください。',
+  502: 'サーバーに接続できません。',
+  503: 'サービスが一時的に利用できません。',
+}
+
+// レスポンスインターセプター（エラーハンドリングとトークンリフレッシュ）
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
     
+    // ネットワークエラーの場合
+    if (!error.response) {
+      error.message = 'ネットワークエラーです。インターネット接続を確認してください。'
+      return Promise.reject(error)
+    }
+
+    // 401エラーでトークンリフレッシュ
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       
       try {
-        // Zustandストアからリフレッシュトークンを取得
         const refreshToken = localStorage.getItem('shift_match_refresh_token')
         if (refreshToken) {
           const { accessToken } = await authService.refreshToken(JSON.parse(refreshToken))
@@ -166,11 +192,17 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
       } catch (refreshError) {
-        // リフレッシュに失敗した場合はログアウト
         localStorage.clear()
         window.location.href = '/login'
+        return Promise.reject(refreshError)
       }
     }
+    
+    // エラーメッセージの改善
+    const status = error.response.status
+    const serverMessage = error.response.data?.error || error.response.data?.message
+    
+    error.message = serverMessage || errorMessages[status] || `予期しないエラーが発生しました (${status})`
     
     return Promise.reject(error)
   }
