@@ -122,9 +122,32 @@ const ChatPage: React.FC = () => {
       return
     }
 
-    // API URLの取得 - フロントエンドが3000ポートの場合、バックエンドを3001ポートと推定
-    const apiUrl = import.meta.env.VITE_API_URL || window.location.protocol + '//' + window.location.hostname + ':3001'
-    console.log('Connecting to Socket.IO server:', apiUrl)
+    // Socket.IO サーバーURLの取得
+    const getSocketUrl = () => {
+      if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL
+      }
+      
+      const protocol = window.location.protocol
+      const hostname = window.location.hostname
+      
+      // ローカル開発環境
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${protocol}//${hostname}:3001`
+      }
+      
+      // サンドボックス環境（E2B）
+      if (hostname.includes('e2b.dev')) {
+        // 3000ポートを3001ポートに置換
+        return `${protocol}//${hostname.replace('3000-', '3001-')}`
+      }
+      
+      // その他の環境
+      return `${protocol}//${hostname}:3001`
+    }
+    
+    const apiUrl = getSocketUrl()
+    console.log('🔌 Connecting to Socket.IO server:', apiUrl)
 
     const newSocket = io(apiUrl, {
       auth: {
